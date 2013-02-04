@@ -14,28 +14,37 @@ import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--directory', action='store', default='', dest='directory', help='Directory/path to save images. Default is ./')
-parser.add_argument('-f', '--filenames', action='store_true', default=False, dest='filenames', help='Save files to filenames seen on posting board if different; files shown with (...) is overlooked.')
+parser.add_argument('-f', '--filenames', action='store_true', default=False, dest='filenames', help='Save files to filenames seen on posting board if different than source link for image.')
 parser.add_argument('-q', '--quiet', action='store_true', default=False, dest='quiet', help='Suppress any output, excluding errors.')
 parser.add_argument('-l', '--link', action='store', dest='link', required=True, help='Link to thread with desired images.')
 
 def downloadImages(imageList, directory, quiet):
+    """Downloads images requested from imageList param and saves to files.
+       Progress output is default, set quiet flag if not desired.
+    """
+    number = 0
     for image in imageList:
-        if not quiet : print image[0], '\tDownloading...'
-        saveFile = open(directory + '/' + image[0], 'wb')
-        saveFile.write(urllib.urlopen('http://' + image[1]).read())
+        number += 1
+        filename = os.path.join(directory, image[1])
+        if os.path.isfile(filename): continue
+        if not quiet : 
+            sys.stdout.write(str(number) + '. ' + image[1] + '\t\tDownloading...')
+            sys.stdout.flush()
+        saveFile = open(filename, 'wb')
+        saveFile.write(urllib.urlopen('http://' + image[0]).read())
         saveFile.close()
-        if not quiet: print '\t\t\tSaved.'
+        if not quiet: sys.stdout.write('\tSaved.\n')
 
 def getImageList(html, filenameFlag):
-    """ Should return a list of tuples of 4chan images with (filename, sourceLink) format.
+    """ Should return a list of tuples of 4chan images with (sourceLink, filename) format.
     """
-    if filenameFlag:
-        return re.findall(r'title="(?P<title>[\S ]+)">(?P=title)\S+ \S+ href="//(\S+)"', html)
+    if not filenameFlag:
+        return re.findall(r'<a \S+ href="//(\S+/src/(\S+))"', html)
 
-    results = re.findall(r'<a \S+ href="//(\S+/src/(\S+))"', html)
+    results = re.findall(r'"((?P<subname>[^"]+)[^"]*(?P<format>\.[a-z]{3,4}))">(?P=subname)(\(\.\.\.\))?(?P=format)\S+ \S+ href="//(\S+)"', html)
     if results is not None:
         for i in range(0, len(results)):
-            results[i] = (results[i][1], results[i][0])
+            results[i] = (results[i][4], results[i][0])
     return results
 
 def main():
