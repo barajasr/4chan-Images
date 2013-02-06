@@ -29,7 +29,12 @@ def downloadImages(imageList, path, quiet):
         filename = os.path.join(path, image[1])
         if os.path.isfile(filename): continue
         if not quiet : 
-            sys.stdout.write(str(number) + '. ' + image[1] + '\t\tDownloading...')
+            sys.stdout.write(str(number) + '. ' + image[1])
+            lengthOfText = len(image[1]) + len(str(number)) + 2
+            if lengthOfText < 45:
+                sys.stdout.write(' '*(45-lengthOfText) + 'Downloading...')
+            else:
+                sys.stdout.write('\n' + ' '*45 + 'Downloading...')
             sys.stdout.flush()
         saveFile = open(filename, 'wb')
         saveFile.write(urllib.urlopen('http://' + image[0]).read())
@@ -71,8 +76,8 @@ def main():
 
     if not quiet:
         print str(len(threadImages)), "Images Found."
-        print 'Savinag thread to:', fullPath
-        print "=="*30 + "\n" + "=="*30
+        print 'Saving thread to:', fullPath
+        print "=="*36 + "\n" + "=="*36
     downloadImages(threadImages, fullPath, quiet)
     if not quiet: print "=="*30 + "\n" + "=="*30
 
