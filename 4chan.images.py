@@ -2,13 +2,13 @@
 # 4chan.images.py
 # 
 # Author: Richard Barajas
-# Date: 07-02-2013
+# Date: 08-02-2013
 
 import argparse
 import os
 import re
 import sys
-import urllib
+import urllib2
 import subprocess 
 
 parser = argparse.ArgumentParser()
@@ -45,31 +45,68 @@ def downloadImages(imageList, path, quiet):
     number = 0
     for image in imageList:
         number += 1
-        filename = os.path.join(path, image[1])
-        if os.path.isfile(filename): continue
-        if not quiet : 
-            sys.stdout.write(str(number) + '. ' + image[1])
-            lengthOfText = len(image[1]) + len(str(number)) + 2
-            if lengthOfText < 45:
-                sys.stdout.write(' '*(45-lengthOfText) + 'Downloading...')
-            else:
-                sys.stdout.write('\n' + ' '*45 + 'Downloading...')
-            sys.stdout.flush()
-        saveToFile(filename, image[0])
+        fullFilename = os.path.join(path, image[1])
+        if os.path.isfile(fullFilename): continue
+        if not quiet: frontProgressText(image[1], number)
+        imageToFile(fullFilename, image[0])
         if not quiet: sys.stdout.write('\tSaved.\n')
+
+def frontProgressText(filename, imageNumber):
+    """Function is solely a slave call from downloadImages.
+       Prints the image number, filename, and Downloading text portions of the progress.
+    """
+    sys.stdout.write(str(imageNumber) + '. ' + filename)
+    lengthOfText = len(filename) + len(str(imageNumber)) + 2
+    if lengthOfText < 45:
+        sys.stdout.write(' '*(45-lengthOfText) + 'Downloading...')
+    else:
+        sys.stdout.write('\n' + ' '*45 + 'Downloading...')
+    sys.stdout.flush()
 
 def getImageList(threadLink, filenameFlag):
     """ Should return a list of tuples of 4chan images with (sourceLink, filename) format.
     """
-    html = urllib.urlopen(threadLink).read()
+    try:
+        html = urllib2.urlopen(threadLink).read()
+    except (urllib2.HTTPError, urllib2.URLError), e:
+        sys.stderr.write('\nError while making request for ' + link + '\n')
+        if isinstance(e, urllib2.HTTPError):
+            sys.stderr.write(str(e.code) + '\n' + e.reason + '\n')
+        else:
+            sys.stderr.write(e.reason + '\n')
+        sys.exit(1)
+
     if not filenameFlag:
         return re.findall(r'<a \S+ href="//(\S+/src/(\S+))"', html)
+
     # Didn't like the slow down using re.compile with multiline regex
-    results = re.findall(r'((?P<subname>[^"]+)[^"]*(?P<format>[a-z.]{4,5}))">(?P=subname)(\(\.\.\.\))?(?P=format)\S+ \S+ href="//(\S+)"'), html)
+    results = re.findall(r'"((?P<subname>[^"]+)[^"]*(?P<format>[a-z.]{4,5}))">(?P=subname)(\(\.\.\.\))?(?P=format)\S+ \S+ href="//(\S+)"', html)
     if results is not None:
         for i in range(0, len(results)):
             results[i] = (results[i][4], results[i][0])
     return results
+
+def imageToFile(filename, link):
+    """Attempt to download image and store to file.
+    """
+    try:
+        image = urllib2.urlopen('http://' + link).read()
+        saveFile = open(filename, 'wb')
+        saveFile.write(image)
+        saveFile.close()
+    except (urllib2.HTTPError, urllib2.URLError), e:
+        sys.stderr.write('\nError while making request for ' + link + '\n')
+        if isinstance(e, urllib2.HTTPError):
+            sys.stderr.write(str(e.code) + '\n' + e.reason + '\n')
+        else:
+            sys.stderr.write(e.reason + '\n')
+        sys.exit(1)
+    except IOError:
+        # remove file if possible, allowing chance for clean download later
+        sys.stderr.write('\nFailed writing to file, ' + filename + '\n')
+        saveFile.close()
+        os.remove(filename)
+        sys.exit(2)
 
 def main():
     args = vars(parser.parse_args())
@@ -89,7 +126,9 @@ def main():
     
     threadFolder = threadNumber[0] if args['directory'] == '' else args['directory']
     fullPath = threadFolder if args['path'] == '' else os.path.join(args['path'], threadFolder)
-    subprocess.call(['mkdir', '-p', fullPath])
+    if subprocess.call(['mkdir', '-p', fullPath]) != 0:
+        sys.stderr.write('Failed to make target directory ' + fullPath + '\n')
+        sys.exit(3)
 
     if not quiet:
         print str(len(threadImages)), "Images Found."
@@ -97,12 +136,6 @@ def main():
         print "=="*36 + "\n" + "=="*36
     downloadImages(threadImages, fullPath, quiet)
     if not quiet: print "=="*30 + "\n" + "=="*30
-
-def saveToFile(filename, link):
-    image = urllib.urlopen('http://' + link).read()
-    saveFile = open(filename, 'wb')
-    saveFile.write(image)
-    saveFile.close()
 
 if __name__ == "__main__":
 	main()
