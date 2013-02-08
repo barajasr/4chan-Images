@@ -2,8 +2,7 @@
 # 4chan.images.py
 # 
 # Author: Richard Barajas
-# Date: 05-02-2013
-#
+# Date: 07-02-2013
 
 import argparse
 import os
@@ -13,11 +12,31 @@ import urllib
 import subprocess 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-d', '--directory', action='store', default='', dest='directory', help='Directory to save images. Default is thread number')
-parser.add_argument('-f', '--filenames', action='store_true', default=False, dest='filenames', help='Save files to filenames seen on posting board if different than source link for image.')
-parser.add_argument('-p', '--path', action='store', default='', dest='path', help='Path to save thread to. Default is ./')
-parser.add_argument('-q', '--quiet', action='store_true', default=False, dest='quiet', help='Suppress any output, excluding errors.')
-parser.add_argument('-l', '--link', action='store', dest='link', required=True, help='Link to thread with desired images.')
+parser.add_argument('-d', '--directory',
+                    action='store',
+                    default='', 
+                    dest='directory',
+                    help='Directory to save images. Default is thread number')
+parser.add_argument('-f', '--filenames', 
+                    action='store_true',
+                    default=False, 
+                    dest='filenames',
+                    help='Save files to filenames seen on posting board if different than source link for image.')
+parser.add_argument('-p', '--path', 
+                    action='store',
+                    default='', 
+                    dest='path',
+                    help='Path to save thread to. Default is ./')
+parser.add_argument('-q', '--quiet', 
+                    action='store_true',
+                    default=False,
+                    dest='quiet',
+                    help='Suppress any output, excluding errors.')
+parser.add_argument('-l', '--link',
+                    action='store',
+                    dest='link',
+                    required=True,
+                    help='Link to thread with desired images.')
 
 def downloadImages(imageList, path, quiet):
     """Downloads images requested from imageList param and saves to files.
