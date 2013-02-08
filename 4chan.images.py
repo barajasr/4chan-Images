@@ -55,9 +55,7 @@ def downloadImages(imageList, path, quiet):
             else:
                 sys.stdout.write('\n' + ' '*45 + 'Downloading...')
             sys.stdout.flush()
-        saveFile = open(filename, 'wb')
-        saveFile.write(urllib.urlopen('http://' + image[0]).read())
-        saveFile.close()
+        saveToFile(filename, image[0])
         if not quiet: sys.stdout.write('\tSaved.\n')
 
 def getImageList(threadLink, filenameFlag):
@@ -66,10 +64,8 @@ def getImageList(threadLink, filenameFlag):
     html = urllib.urlopen(threadLink).read()
     if not filenameFlag:
         return re.findall(r'<a \S+ href="//(\S+/src/(\S+))"', html)
-
-    results = re.findall(re.compile('((?P<subname>[^"]+)[^"]*(?P<format>[a-z.]{4,5}))' # full filename
-                                    '">(?P=subname)(\(\.\.\.\))?(?P=format)'           # possibly includes (...)
-                                    '\S+ \S+ href="//(\S+)"'), html)                   # sourceLink of image
+    # Didn't like the slow down using re.compile with multiline regex
+    results = re.findall(r'((?P<subname>[^"]+)[^"]*(?P<format>[a-z.]{4,5}))">(?P=subname)(\(\.\.\.\))?(?P=format)\S+ \S+ href="//(\S+)"'), html)
     if results is not None:
         for i in range(0, len(results)):
             results[i] = (results[i][4], results[i][0])
@@ -101,6 +97,12 @@ def main():
         print "=="*36 + "\n" + "=="*36
     downloadImages(threadImages, fullPath, quiet)
     if not quiet: print "=="*30 + "\n" + "=="*30
+
+def saveToFile(filename, link):
+    image = urllib.urlopen('http://' + link).read()
+    saveFile = open(filename, 'wb')
+    saveFile.write(image)
+    saveFile.close()
 
 if __name__ == "__main__":
 	main()
