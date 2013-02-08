@@ -1,4 +1,4 @@
-#! /usr/bin/python 
+#! /usr/bin/env python 
 # 4chan.images.py
 # 
 # Author: Richard Barajas
@@ -69,7 +69,7 @@ def getImageList(threadLink, filenameFlag):
     try:
         html = urllib2.urlopen(threadLink).read()
     except (urllib2.HTTPError, urllib2.URLError), e:
-        sys.stderr.write('\nError while making request for ' + link + '\n')
+        sys.stderr.write('\nError while making request for ' + threadLink + '\n')
         if isinstance(e, urllib2.HTTPError):
             sys.stderr.write(str(e.code) + '\n' + e.reason + '\n')
         else:
