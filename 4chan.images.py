@@ -48,7 +48,9 @@ def getImageList(threadLink, filenameFlag):
     if not filenameFlag:
         return re.findall(r'<a \S+ href="//(\S+/src/(\S+))"', html)
 
-    results = re.findall(r'"((?P<subname>[^"]+)[^"]*(?P<format>[a-z.]{4,5}))">(?P=subname)(\(\.\.\.\))?(?P=format)\S+ \S+ href="//(\S+)"', html)
+    results = re.findall(re.compile('((?P<subname>[^"]+)[^"]*(?P<format>[a-z.]{4,5}))' # full filename
+                                    '">(?P=subname)(\(\.\.\.\))?(?P=format)'           # possibly includes (...)
+                                    '\S+ \S+ href="//(\S+)"'), html)                   # sourceLink of image
     if results is not None:
         for i in range(0, len(results)):
             results[i] = (results[i][4], results[i][0])
