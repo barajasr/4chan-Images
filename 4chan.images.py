@@ -1,10 +1,11 @@
 #! /usr/bin/env python 
 # 4chan.images.py
-# 
+#
 # Author: Richard Barajas
 # Date: 08-02-2013
 
 import argparse
+from BeautifulSoup import BeautifulSoup
 import os
 import re
 import sys
@@ -53,7 +54,8 @@ def downloadImages(imageList, path, quiet):
 
 def frontProgressText(filename, imageNumber):
     """Function is solely a slave call from downloadImages.
-       Prints the image number, filename, and Downloading text portions of the progress.
+       Prints the image number, filename, and Downloading text portions
+       of the progress.
     """
     sys.stdout.write(str(imageNumber) + '. ' + filename)
     lengthOfText = len(filename) + len(str(imageNumber)) + 2
@@ -64,8 +66,11 @@ def frontProgressText(filename, imageNumber):
     sys.stdout.flush()
 
 def getImageList(threadLink, filenameFlag):
-    """ Should return a list of tuples of 4chan images with (sourceLink, filename) format.
+    """ Should return a list of tuples of 4chan images with (sourceLink, filename)
+        format.
     """
+
+    # Attempt to get html for thread
     try:
         html = urllib2.urlopen(threadLink).read()
     except (urllib2.HTTPError, urllib2.URLError), e:
@@ -76,21 +81,20 @@ def getImageList(threadLink, filenameFlag):
             sys.stderr.write(e.reason + '\n')
         sys.exit(1)
 
-    if not filenameFlag:
-        return re.findall(r'<a \S+ href="//(\S+/src/(\S+))"', html)
+    # Parse for images
+    soup = BeautifulSoup(html)
+    # Template for findAll
+    # <div class="fileText" id="fT6816862">File: <a href="//i.4cdn.org/sci/1413436856754.jpg" target="_blank">black science man.jpg</a> (81 KB, 960x502)</div>
+    data = soup.findAll('div', {'class' : 'fileText'})
+    data = [post.find('a') for post in data]
 
-    # Didn't like the slow down using re.compile with multiline regex
-    results = re.findall(r'"((?P<subname>[^"]+)[^"]*(?P<format>[a-z.]{4,5}))">(?P=subname)(\(\.\.\.\))?(?P=format)\S+ \S+ href="//(\S+)"', html)
-    if results is not None:
-        for i in range(0, len(results)):
-            results[i] = (results[i][4], results[i][0])
-    return results
+    return [('http:' + anchor['href'], anchor.text) for anchor in data]
 
 def imageToFile(filename, link):
     """Attempt to download image and store to file.
     """
     try:
-        image = urllib2.urlopen('http://' + link).read()
+        image = urllib2.urlopen(link).read()
         saveFile = open(filename, 'wb')
         saveFile.write(image)
         saveFile.close()
@@ -112,7 +116,7 @@ def main():
     args = vars(parser.parse_args())
 
     threadLink = args['link']
-    threadNumber = re.findall(r'http://boards\S+/res/(\d+\Z)', threadLink)
+    threadNumber = re.findall(r'http://boards\S+/thread/(\d+\Z)', threadLink)
     if threadNumber is None or threadNumber == []:
         sys.stderr.write('Thread not found, now exiting.\n')
         sys.exit(0)
@@ -120,10 +124,12 @@ def main():
     quiet = args['quiet']
     if not quiet: print 'Searching for images...'
     threadImages = getImageList(threadLink, args['filenames'])
+    for i in threadImages:
+        print i
     if threadImages is None or threadImages == []:
         sys.stderr.write('No images found, now exiting.\n')
         sys.exit(0)
-    
+
     threadFolder = threadNumber[0] if args['directory'] == '' else args['directory']
     fullPath = threadFolder if args['path'] == '' else os.path.join(args['path'], threadFolder)
     if subprocess.call(['mkdir', '-p', fullPath]) != 0:
@@ -138,5 +144,5 @@ def main():
     if not quiet: print "=="*30 + "\n" + "=="*30
 
 if __name__ == "__main__":
-	main()
+    main()
 
