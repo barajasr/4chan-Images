@@ -18,11 +18,6 @@ parser.add_argument('-d', '--directory',
                     default='', 
                     dest='directory',
                     help='Directory to save images. Default is thread number')
-parser.add_argument('-f', '--filenames', 
-                    action='store_true',
-                    default=False, 
-                    dest='filenames',
-                    help='Save files to filenames seen on posting board if different than source link for image.')
 parser.add_argument('-p', '--path', 
                     action='store',
                     default='', 
@@ -65,7 +60,7 @@ def frontProgressText(filename, imageNumber):
         sys.stdout.write('\n' + ' '*45 + 'Downloading...')
     sys.stdout.flush()
 
-def getImageList(threadLink, filenameFlag):
+def getImageList(threadLink):
     """ Should return a list of tuples of 4chan images with (sourceLink, filename)
         format.
     """
@@ -123,9 +118,7 @@ def main():
 
     quiet = args['quiet']
     if not quiet: print 'Searching for images...'
-    threadImages = getImageList(threadLink, args['filenames'])
-    for i in threadImages:
-        print i
+    threadImages = getImageList(threadLink)
     if threadImages is None or threadImages == []:
         sys.stderr.write('No images found, now exiting.\n')
         sys.exit(0)
