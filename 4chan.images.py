@@ -75,14 +75,19 @@ def getImageList(threadUrl):
             sys.stderr.write(e.reason + '\n')
         sys.exit(1)
 
-    # Parse for images
     soup = BeautifulSoup(html)
-    # Template for findAll
+    # Expected entry example for findAll result
     # <div class="fileText" id="fT6816862">File: <a href="//i.4cdn.org/sci/1413436856754.jpg" target="_blank">black science man.jpg</a> (81 KB, 960x502)</div>
     data = soup.findAll('div', {'class' : 'fileText'})
     data = [post.find('a') for post in data]
 
-    return [('http:' + anchor['href'], anchor.text) for anchor in data]
+    tuples = []
+    for anchor in data:
+        filename = anchor.text
+        if anchor.has_key('title'): # Filename has '(...)' pattern in it
+            filename = anchor['title']
+        tuples.append(('http:'+ anchor['href'], filename))
+    return tuples
 
 def imageToFile(filename, url):
     """Attempt to download image and store to file.
