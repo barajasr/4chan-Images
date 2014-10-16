@@ -2,7 +2,7 @@
 # 4chan.images.py
 #
 # Author: Richard Barajas
-# Date: 08-02-2013
+# Date: 16-10-2014
 
 import argparse
 from BeautifulSoup import BeautifulSoup
@@ -10,7 +10,7 @@ import os
 import re
 import sys
 import urllib2
-import subprocess 
+import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--directory',
@@ -42,10 +42,12 @@ def downloadImages(imageList, path, quiet):
     for image in imageList:
         number += 1
         fullFilename = os.path.join(path, image[1])
-        if os.path.isfile(fullFilename): continue
+        downloaded = os.path.isfile(fullFilename)
         if not quiet: frontProgressText(image[1], number)
         imageToFile(fullFilename, image[0])
-        if not quiet: sys.stdout.write('\tSaved.\n')
+        if not quiet: 
+            message = '\tSaved.\n' if not downloaded else '\tAlready Exists.\n'
+            sys.stdout.write(message)
 
 def frontProgressText(filename, imageNumber):
     """Function is solely a slave call from downloadImages.
@@ -55,9 +57,9 @@ def frontProgressText(filename, imageNumber):
     sys.stdout.write(str(imageNumber) + '. ' + filename)
     lengthOfText = len(filename) + len(str(imageNumber)) + 2
     if lengthOfText < 45:
-        sys.stdout.write(' '*(45-lengthOfText) + 'Downloading...')
+        sys.stdout.write(' '*(45-lengthOfText) + 'Progress...')
     else:
-        sys.stdout.write('\n' + ' '*45 + 'Downloading...')
+        sys.stdout.write('\n' + ' '*45 + 'Progress...')
     sys.stdout.flush()
 
 def getImageList(threadLink):
@@ -117,7 +119,7 @@ def main():
         sys.exit(0)
 
     quiet = args['quiet']
-    if not quiet: print 'Searching for images...'
+    if not quiet: print 'Searching for images...',
     threadImages = getImageList(threadLink)
     if threadImages is None or threadImages == []:
         sys.stderr.write('No images found, now exiting.\n')
@@ -129,12 +131,13 @@ def main():
         sys.stderr.write('Failed to make target directory ' + fullPath + '\n')
         sys.exit(3)
 
+    width = 45
     if not quiet:
         print str(len(threadImages)), "Images Found."
         print 'Saving thread to:', fullPath
-        print "=="*36 + "\n" + "=="*36
+        print "=="*width + "\n" + "=="*width
     downloadImages(threadImages, fullPath, quiet)
-    if not quiet: print "=="*30 + "\n" + "=="*30
+    if not quiet: print "=="*width + "\n" + "=="*width
 
 if __name__ == "__main__":
     main()
