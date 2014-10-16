@@ -18,6 +18,10 @@ parser.add_argument('-d', '--directory',
                     default='', 
                     dest='directory',
                     help='Directory to save images. Default is thread number')
+parser.add_argument('-n', '--nofolder',
+                    action='store_true',
+                    dest='nofolder',
+                    help='Do not create a folder to group media resources in.')
 parser.add_argument('-p', '--path', 
                     action='store',
                     default='', 
@@ -35,6 +39,7 @@ def downloadImages(imageList, path, quiet):
     """Downloads images requested from imageList param and saves to files.
        Progress output is default, set quiet flag if not desired.
     """
+
     number = 0
     for image in imageList:
         number += 1
@@ -51,6 +56,7 @@ def frontProgressText(filename, imageNumber):
        Prints the image number, filename, and Downloading text portions
        of the progress.
     """
+
     sys.stdout.write(str(imageNumber) + '. ' + filename)
     lengthOfText = len(filename) + len(str(imageNumber)) + 2
     if lengthOfText < 45:
@@ -64,7 +70,6 @@ def getImageList(threadUrl):
         format.
     """
 
-    # Attempt to get html for thread
     try:
         html = urllib2.urlopen(threadUrl).read()
     except (urllib2.HTTPError, urllib2.URLError), e:
@@ -92,6 +97,7 @@ def getImageList(threadUrl):
 def imageToFile(filename, url):
     """Attempt to download image and store to file.
     """
+
     try:
         image = urllib2.urlopen(url).read()
         saveFile = open(filename, 'wb')
@@ -127,13 +133,18 @@ def main():
         sys.stderr.write('No images found, now exiting.\n')
         sys.exit(0)
 
-    threadFolder = threadNumber[0] if args['directory'] == '' else args['directory']
-    fullPath = threadFolder if args['path'] == '' else os.path.join(args['path'], threadFolder)
-    if subprocess.call(['mkdir', '-p', fullPath]) != 0:
-        sys.stderr.write('Failed to make target directory ' + fullPath + '\n')
-        sys.exit(3)
+    fullPath = args['path']
+    if fullPath != '' and  not os.path.isdir(fullPath):
+            sys.stderr.write( "'"+ fullPath + "' path does not exist or invalid\n")
+            sys.exit(3)
+    if not args['nofolder']:
+        threadFolder = threadNumber[0] if args['directory'] == '' else args['directory']
+        fullPath = threadFolder if fullPath == '' else os.path.join(fullPath, threadFolder)
+        if subprocess.call(['mkdir', '-p', fullPath]) != 0:
+            sys.stderr.write('Failed to make target directory ' + fullPath + '\n')
+            sys.exit(4)
 
-    width = 45
+    width = 40
     if not quiet:
         print str(len(threadImages)), "Images Found."
         print 'Saving thread to:', fullPath
