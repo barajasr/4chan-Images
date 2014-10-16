@@ -28,11 +28,8 @@ parser.add_argument('-q', '--quiet',
                     default=False,
                     dest='quiet',
                     help='Suppress any output, excluding errors.')
-parser.add_argument('-l', '--link',
-                    action='store',
-                    dest='link',
-                    required=True,
-                    help='Link to thread with desired images.')
+parser.add_argument('url',
+                    help='Url to thread with desired images.')
 
 def downloadImages(imageList, path, quiet):
     """Downloads images requested from imageList param and saves to files.
@@ -62,16 +59,16 @@ def frontProgressText(filename, imageNumber):
         sys.stdout.write('\n' + ' '*45 + 'Progress...')
     sys.stdout.flush()
 
-def getImageList(threadLink):
-    """ Should return a list of tuples of 4chan images with (sourceLink, filename)
+def getImageList(threadUrl):
+    """ Should return a list of tuples of 4chan images with (sourceUrl, filename)
         format.
     """
 
     # Attempt to get html for thread
     try:
-        html = urllib2.urlopen(threadLink).read()
+        html = urllib2.urlopen(threadUrl).read()
     except (urllib2.HTTPError, urllib2.URLError), e:
-        sys.stderr.write('\nError while making request for ' + threadLink + '\n')
+        sys.stderr.write('\nError while making request for ' + threadUrl + '\n')
         if isinstance(e, urllib2.HTTPError):
             sys.stderr.write(str(e.code) + '\n' + e.reason + '\n')
         else:
@@ -87,16 +84,16 @@ def getImageList(threadLink):
 
     return [('http:' + anchor['href'], anchor.text) for anchor in data]
 
-def imageToFile(filename, link):
+def imageToFile(filename, url):
     """Attempt to download image and store to file.
     """
     try:
-        image = urllib2.urlopen(link).read()
+        image = urllib2.urlopen(url).read()
         saveFile = open(filename, 'wb')
         saveFile.write(image)
         saveFile.close()
     except (urllib2.HTTPError, urllib2.URLError), e:
-        sys.stderr.write('\nError while making request for ' + link + '\n')
+        sys.stderr.write('\nError while making request for ' + url + '\n')
         if isinstance(e, urllib2.HTTPError):
             sys.stderr.write(str(e.code) + '\n' + e.reason + '\n')
         else:
@@ -112,15 +109,15 @@ def imageToFile(filename, link):
 def main():
     args = vars(parser.parse_args())
 
-    threadLink = args['link']
-    threadNumber = re.findall(r'http://boards\S+/thread/(\d+\Z)', threadLink)
+    threadUrl = args['url']
+    threadNumber = re.findall(r'http://boards\S+/thread/(\d+\Z)', threadUrl)
     if threadNumber is None or threadNumber == []:
         sys.stderr.write('Thread not found, now exiting.\n')
         sys.exit(0)
 
     quiet = args['quiet']
     if not quiet: print 'Searching for images...',
-    threadImages = getImageList(threadLink)
+    threadImages = getImageList(threadUrl)
     if threadImages is None or threadImages == []:
         sys.stderr.write('No images found, now exiting.\n')
         sys.exit(0)
